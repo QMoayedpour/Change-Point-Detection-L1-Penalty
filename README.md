@@ -32,7 +32,7 @@ changepoints = model.run()
 # Optional: build the fitted approximation and plot it
 approx = model.compute_approx_and_plot(verbose=False, logs=True)
 print("Changepoints (inclusive indices):", changepoints)
-```
+``` 
 
 ### Using your own data
 Pass any 1D NumPy array to `CPOP(y, beta=..., sigma=...)`. If `sigma` is not provided, it is estimated from the median absolute deviation of the first differences. For visual inspection, call `compute_approx_and_plot(verbose=True)` to overlay the fitted signal and changepoints.
