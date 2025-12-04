@@ -4,7 +4,13 @@ setup(
     name="CPD_L0_Penalty",
     version="0.1.0",
     packages=find_packages(),
-    install_requires=["pandas", "torch", "numpy",
-                      "matplotlib", "scikit-learn", "scipy",
-                      "tqdm"],
+    install_requires=[
+        "pandas",
+        "torch",
+        "numpy",
+        "matplotlib",
+        "scikit-learn",
+        "scipy",
+        "tqdm",
+    ],
 )

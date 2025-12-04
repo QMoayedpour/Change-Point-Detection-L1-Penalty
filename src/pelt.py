@@ -22,7 +22,7 @@ class PELT(object):
         cost_grid = np.zeros((n, n))
         for t in range(n):
             for s in range(t, n):
-                cost_grid[t, s] = self.cost_function(self.x[t:(s + 1)])
+                cost_grid[t, s] = self.cost_function(self.x[t : (s + 1)])
         return cost_grid
 
     def dp_first_cp(self, cost_values, opt_values):
@@ -58,7 +58,7 @@ class PELT(object):
                 opt_values = V[t:]
                 T[k - 1][t], V[t] = self.dp_first_cp(cost_values, opt_values)
                 T[k - 1][t] += t
-            V = V[:n - k]
+            V = V[: n - k]
 
         T[-1], _ = self.dp_first_cp(cost_grid[0], V)
         self.T = T
@@ -104,18 +104,23 @@ class PELT(object):
                 model.fit(t, self.x[start:end])
 
                 segment_means.append(model.predict(t))
-           
+
         else:
             segment_means = []
             for i in range(len(CP) - 1):
                 start, end = CP[i], CP[i + 1]
-                segment_means.append(np.tile(np.mean(self.x[start:end]), end-start))
+                segment_means.append(np.tile(np.mean(self.x[start:end]), end - start))
         segments = np.concatenate(segment_means)
 
         plt.figure(figsize=(16, 8))
         plt.plot(np.arange(len(self.x)), self.x)
 
-        plt.scatter(CP[1:-1], segments[CP[1:-1]], label=f"{num_changepoints} Change Points", c="r")
+        plt.scatter(
+            CP[1:-1],
+            segments[CP[1:-1]],
+            label=f"{num_changepoints} Change Points",
+            c="r",
+        )
         if how == "linear":
             plt.plot(np.arange(len(self.x)), segments, c="red")
         else:

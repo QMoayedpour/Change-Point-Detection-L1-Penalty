@@ -25,7 +25,7 @@ class CPOP(object):
         self.coefs_t = {}
         self.recompute_sigma = False
         self.idxs = idxs
-    
+
     def update_sigma(self):
         self.sigma = np.std(self.y - self.approx)
 
@@ -45,7 +45,7 @@ class CPOP(object):
 
         sum_y_linear = np.sum(self.y[tauk:t] * np.arange(1, s + 1))
         sum_y = np.sum(self.y[tauk:t])
-        sum_y_squared = np.sum(self.y[tauk:t]**2)
+        sum_y_squared = np.sum(self.y[tauk:t] ** 2)
 
         C = -2 / (s * self.sigma**2) * (sum_y_linear)
         D = sum_y_squared / self.sigma**2
@@ -58,27 +58,33 @@ class CPOP(object):
         A, B, C, D, E, F = self.get_coefs(tauk, t)
 
         if F == 0:  # pas de division par 0
-            return np.array([self.y[0] ** 2]*3),  -2 * self.y[0], 1        
+            return np.array([self.y[0] ** 2] * 3), -2 * self.y[0], 1
 
-        rec_1 = -E /(2*F)
-        rec_2 = -B /(2*F)
-        a = D + self.h(t-tauk) + self.beta - (E**2)/(4*F)
-        b = C - 2*(E*B)/(4*F)
-        c = A - (B**2)/(4*F)
+        rec_1 = -E / (2 * F)
+        rec_2 = -B / (2 * F)
+        a = D + self.h(t - tauk) + self.beta - (E**2) / (4 * F)
+        b = C - 2 * (E * B) / (4 * F)
+        c = A - (B**2) / (4 * F)
 
         return np.array([a, b, c]), rec_1, rec_2
 
     def get_min_inf(self, coefs):
         min_col2 = min(array[2] for array in coefs.values())
-        candidates = {key: array for key, array in coefs.items() if array[2] == min_col2}
+        candidates = {
+            key: array for key, array in coefs.items() if array[2] == min_col2
+        }
 
         if len(candidates) > 1:
             max_col1 = max(array[1] for array in candidates.values())
-            candidates = {key: array for key, array in candidates.items() if array[1] == max_col1}
+            candidates = {
+                key: array for key, array in candidates.items() if array[1] == max_col1
+            }
 
         if len(candidates) > 1:
             min_col0 = min(array[0] for array in candidates.values())
-            candidates = {key: array for key, array in candidates.items() if array[0] == min_col0}
+            candidates = {
+                key: array for key, array in candidates.items() if array[0] == min_col0
+            }
 
         return next(iter(candidates.keys()))
 
@@ -86,12 +92,18 @@ class CPOP(object):
         s = t - tauk
         A, B, C, D, E, F = self.get_coefs(tauk, t)
 
-        rec_1 = -(E + past_coefs[1]) / (2*(F + past_coefs[2]))
-        rec_2 = -B / (2*(F + past_coefs[2]))
+        rec_1 = -(E + past_coefs[1]) / (2 * (F + past_coefs[2]))
+        rec_2 = -B / (2 * (F + past_coefs[2]))
 
-        a = past_coefs[0] + D + self.beta + self.h(s) - ((past_coefs[1]+E)**2)/(4*(past_coefs[2] + F))  
-        b = C - B*(past_coefs[1]+E) / (2 * (past_coefs[2] + F))
-        c = A - (B**2)/(4*(past_coefs[2]+F))
+        a = (
+            past_coefs[0]
+            + D
+            + self.beta
+            + self.h(s)
+            - ((past_coefs[1] + E) ** 2) / (4 * (past_coefs[2] + F))
+        )
+        b = C - B * (past_coefs[1] + E) / (2 * (past_coefs[2] + F))
+        c = A - (B**2) / (4 * (past_coefs[2] + F))
 
         return np.array([a, b, c]), rec_1, rec_2
 
@@ -148,8 +160,9 @@ class CPOP(object):
                 if tau == key_curr:
                     x[tau] = np.inf
                     continue
-                x[tau], remove = self.get_mean_diff(phi_curr, coefs[tau],
-                                                    coefs[key_curr], tau, remove)
+                x[tau], remove = self.get_mean_diff(
+                    phi_curr, coefs[tau], coefs[key_curr], tau, remove
+                )
 
             if not x:
                 break
@@ -176,27 +189,30 @@ class CPOP(object):
     def update_T_hat(self, coefs, taus_t, t):
         intervals = self.get_int_t(coefs, taus_t)
 
-        T_t_star = [ast.literal_eval(tau) for tau in intervals if intervals[tau] is not None]
+        T_t_star = [
+            ast.literal_eval(tau) for tau in intervals if intervals[tau] is not None
+        ]
 
         T_t_prune = self.ineq_prun(self.coefs)
 
         taus_t_ = T_t_star.copy()
 
         for tau in T_t_star:
-            if tau not in T_t_prune: # Ici T_t_prune renvoie les partitions qui ne vérifient pas
-                                     # L'autre cond de pruning
-                                     # Peut etre #TODO modifier comment on fait l'intersection des 2 sets ?
+            if (
+                tau not in T_t_prune
+            ):  # Ici T_t_prune renvoie les partitions qui ne vérifient pas
+                # L'autre cond de pruning
+                # Peut etre #TODO modifier comment on fait l'intersection des 2 sets ?
                 taus_t_.append(tau + [t])
 
         return taus_t_
 
     def get_val(self, coefs_dict):
-        """Compute the cost of the function
-        """
+        """Compute the cost of the function"""
         output_dict = {}
 
         for key, coefs in coefs_dict.items():
-            if coefs[2] == 0: # Pas de div par 0
+            if coefs[2] == 0:  # Pas de div par 0
                 output_dict[key] = coefs[0]
             else:
                 output_dict[key] = float(coefs[0] - coefs[1] ** 2 / 4 / coefs[2])
@@ -204,7 +220,6 @@ class CPOP(object):
         return output_dict
 
     def ineq_prun(self, coefs):
-
         bound_dict = self.get_val(coefs)
 
         bounds_values = np.array(list(bound_dict.values()))
@@ -226,11 +241,11 @@ class CPOP(object):
         but in practice, the taus stored are not really big.
         """
 
-        self._reset_coefs() # On vide nos dictionnaires
+        self._reset_coefs()  # On vide nos dictionnaires
 
         self.K = 2 * self.beta + self.h(1) + self.h(self.n)
 
-        for t in range(1, self.n+1):
+        for t in range(1, self.n + 1):
             self.coefs_t[t] = {}
             for i, tau in enumerate(self.taus_t):
                 if len(tau) == 1 and tau[0] == 0:
@@ -238,32 +253,36 @@ class CPOP(object):
                     self.coefs_t[t][f"{tau}"] = self.coefs[f"{tau}"]
                     continue
 
-                self.coefs[f"{tau}"], _, __ = self.get_min_C(tau[-1], t,
-                                                             self.coefs_t[tau[-1]][f"{tau[:-1]}"])
+                self.coefs[f"{tau}"], _, __ = self.get_min_C(
+                    tau[-1], t, self.coefs_t[tau[-1]][f"{tau[:-1]}"]
+                )
                 self.coefs_t[t][f"{tau}"] = self.coefs[f"{tau}"]
 
             self.taus_t = self.update_T_hat(self.coefs, self.taus_t, t)
-            self.coefs = {tau: self.coefs[f"{tau}"] for tau in self.coefs if ast.literal_eval(tau) in self.taus_t}
+            self.coefs = {
+                tau: self.coefs[f"{tau}"]
+                for tau in self.coefs
+                if ast.literal_eval(tau) in self.taus_t
+            }
 
         res = self.get_val(self.coefs)
         ckpts = ast.literal_eval(min(res, key=res.get))
-        self.ckpts = [x-1 if x!=0 else 0 for x in ckpts]
-        self.ckpts += [len(self.y)-1]
+        self.ckpts = [x - 1 if x != 0 else 0 for x in ckpts]
+        self.ckpts += [len(self.y) - 1]
         return self.ckpts
 
     def get_phis(self, ckpts):
         """
         Before calling this function, make sure ckpts[0] = 0 and ckpts[-1] = t-1
         """
-        coef, rec_1, rec_2 = self.get_coefs_at_null(ckpts[1]+1)
+        coef, rec_1, rec_2 = self.get_coefs_at_null(ckpts[1] + 1)
 
         list_rec_1s = [rec_1]
         list_rec_2s = [rec_2]
         list_phi = []
 
         for i, ckpt in enumerate(ckpts[2:]):
-
-            coef, rec_1, rec_2 = self.get_min_C(ckpts[i+1]+1, ckpt + 1, coef) 
+            coef, rec_1, rec_2 = self.get_min_C(ckpts[i + 1] + 1, ckpt + 1, coef)
 
             list_rec_1s.append(rec_1)
             list_rec_2s.append(rec_2)
@@ -287,16 +306,23 @@ class CPOP(object):
 
         return np.concatenate(approx)
 
-    def compute_approx_and_plot(self, ckpts=None, logs=False, verbose=True,
-                                stride=5, title="", test=False, noticks=False):
-        """Compute the phis, the approximation of y (given phis) and plot it (optionnal)
-        """
+    def compute_approx_and_plot(
+        self,
+        ckpts=None,
+        logs=False,
+        verbose=True,
+        stride=5,
+        title="",
+        test=False,
+        noticks=False,
+    ):
+        """Compute the phis, the approximation of y (given phis) and plot it (optionnal)"""
         if ckpts is None:
             ckpts = self.ckpts
         if ckpts[0] != 0:
             ckpts.insert(0, 0)
-        if ckpts[-1] != len(self.y)-1:
-            ckpts.insert(-1, len(self.y)-1)
+        if ckpts[-1] != len(self.y) - 1:
+            ckpts.insert(-1, len(self.y) - 1)
 
         self.phis = self.get_phis(ckpts)
 
@@ -328,24 +354,30 @@ class CPOP(object):
             return self.approx
 
     def _loglikelihood(self):
-
         log_likelihood = 0
 
         for t in range(self.n):
-
-            log_likelihood += -0.5 * (np.log(2 * np.pi * self.sigma**2) + ((self.y[t] - self.approx[t]) ** 2) / self.sigma**2)
+            log_likelihood += -0.5 * (
+                np.log(2 * np.pi * self.sigma**2)
+                + ((self.y[t] - self.approx[t]) ** 2) / self.sigma**2
+            )
 
         return log_likelihood
 
     def BIC(self):
-        return -2*self._loglikelihood() + len(self.phis) * np.log(self.n)
+        return -2 * self._loglikelihood() + len(self.phis) * np.log(self.n)
 
     def mBIC(self):
-        scnd_term = sum(math.log((self.ckpts[i] - self.ckpts[i-1]) / self.n) for i in range(1, len(self.ckpts)))
-        return -2*self._loglikelihood() + 6 * len(self.phis) * np.log(self.n) + scnd_term
+        scnd_term = sum(
+            math.log((self.ckpts[i] - self.ckpts[i - 1]) / self.n)
+            for i in range(1, len(self.ckpts))
+        )
+        return (
+            -2 * self._loglikelihood() + 6 * len(self.phis) * np.log(self.n) + scnd_term
+        )
 
     def AIC(self):
-        return -2*self._loglikelihood() + 2*len(self.phis)
+        return -2 * self._loglikelihood() + 2 * len(self.phis)
 
     def criterion(self, criterion="BIC"):
         if criterion == "BIC":
@@ -357,9 +389,16 @@ class CPOP(object):
         else:
             return None
 
-    def compute_max_criterion(self, beta_range=np.linspace(0.5, 20, 39), criterion="BIC",
-                              verbose=True, log_n=False, upd_sigma=False, reset_sigma=True,
-                              noticks=False):
+    def compute_max_criterion(
+        self,
+        beta_range=np.linspace(0.5, 20, 39),
+        criterion="BIC",
+        verbose=True,
+        log_n=False,
+        upd_sigma=False,
+        reset_sigma=True,
+        noticks=False,
+    ):
         """
         For beta in beta_range, we estimate the model and select the one that minimise the criterion
         log_n is optional and multiply the values of beta by log_n. In the original article
@@ -370,7 +409,6 @@ class CPOP(object):
         if log_n:
             beta_range *= np.log(self.n)
         for i in tqdm(beta_range):
-
             self.beta = i
 
             self._reset_coefs()
@@ -379,11 +417,12 @@ class CPOP(object):
             self.compute_approx_and_plot(verbose=False)
 
             if upd_sigma:
-                self.update_sigma()    
+                self.update_sigma()
 
             criterion_value.append(self.criterion(criterion))
-            self.list_logs.append((float(self.sigma), float(self.beta),
-                                    float(self.criterion(criterion))))
+            self.list_logs.append(
+                (float(self.sigma), float(self.beta), float(self.criterion(criterion)))
+            )
 
             if reset_sigma:
                 self.reset_sigma()
